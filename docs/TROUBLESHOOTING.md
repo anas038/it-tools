@@ -59,6 +59,14 @@ Errors in it-tools are signaled via exit codes. Each section below covers one ex
 - **Cause:** The file specified by `--file` or `HORS_SUPPORT_FILE` does not exist.
 - **Fix:** Verify the file path. The file should contain one serial number per line.
 
+**Message:** `No backups found in <path>`
+- **Cause:** The restore tool's interactive selection found no `glpi-backup-*` directories in `BACKUP_DEST`.
+- **Fix:** Run a backup first: `it glpi backup`
+
+**Message:** `No database dump found in backup` / `No files archive found in backup` / `No webroot archive found in backup`
+- **Cause:** The selected backup directory is missing the expected archive file for the requested component.
+- **Fix:** Select a different backup or re-run `it glpi backup` to create a complete backup.
+
 ---
 
 ## Exit Code 2 — Dependency
@@ -167,6 +175,14 @@ Errors in it-tools are signaled via exit codes. Each section below covers one ex
   # Set BACKUP_VERIFY_MOUNT=false in glpi.conf
   ```
 
+**Message:** `Backup directory not found: <path>`
+- **Cause:** The path given to `--backup` does not exist on disk.
+- **Fix:** Check the `--backup` path. Use `ls` to verify the backup directory exists.
+
+**Message:** `No backup archives found in: <path>`
+- **Cause:** The backup directory exists but contains no `.sql.gz` or `.tar.gz` files.
+- **Fix:** Select a different backup directory that contains the expected archive files.
+
 **Message:** `Files directory not found: <path>` / `GLPI install path not found: <path>`
 - **Cause:** The GLPI installation path in the config does not exist on disk.
 - **Fix:** Verify `GLPI_INSTALL_PATH` in `glpi.conf` matches the actual install location.
@@ -187,13 +203,14 @@ Errors in it-tools are signaled via exit codes. Each section below covers one ex
   ps aux | grep "it glpi"
 
   # If no process is running, the lock is orphaned — remove it
-  rm /opt/it-tools/logs/glpi-backup.lock   # or glpi-purge.lock, glpi-archive.lock, glpi-report.lock, glpi-asset-status.lock
+  rm /opt/it-tools/logs/glpi-backup.lock   # or glpi-restore.lock, glpi-purge.lock, glpi-archive.lock, glpi-report.lock, glpi-asset-status.lock
 
   # Locks auto-expire after LOCK_TIMEOUT_MINUTES (default: 120 min)
   ```
 
 Lock file locations:
 - `logs/glpi-backup.lock`
+- `logs/glpi-restore.lock`
 - `logs/glpi-purge.lock`
 - `logs/glpi-archive.lock`
 - `logs/glpi-report.lock`
@@ -218,6 +235,10 @@ Lock file locations:
 - **Cause:** The safety gate found no `*.tar.gz` or `*.sql.gz` files in `BACKUP_DEST`.
 - **Fix:** Run a backup first: `it glpi backup`
 
+**Message:** `Backup is marked as partial (incomplete): <path>`
+- **Cause:** The restore tool detected a `.partial` flag file in the selected backup directory. Partial backups are not safe to restore from.
+- **Fix:** Select a different (complete) backup, or re-run `it glpi backup` to create a new complete backup.
+
 **Message:** `Most recent backup is <N>h old (max: <M>h): <file>`
 - **Cause:** The newest backup file is older than `BACKUP_MAX_AGE_HOURS`.
 - **Fix:**
@@ -236,7 +257,7 @@ Lock file locations:
 
 ## Exit Code 8 — Partial
 
-**Message:** `GLPI backup completed with errors` / `GLPI purge completed with errors` / `GLPI archive completed with errors`
+**Message:** `GLPI backup completed with errors` / `GLPI restore completed with errors` / `GLPI purge completed with errors` / `GLPI archive completed with errors`
 - **Cause:** The operation completed but some steps failed. The specific errors are listed in the alert and log output.
 - **Fix:** Review the logged errors (see the alert or stderr output) and address each one individually. Common causes: a single table failed while others succeeded, or a file archive failed but the DB dump succeeded.
 
