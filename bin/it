@@ -1,0 +1,133 @@
+#!/bin/sh
+# bin/it — Unified dispatcher for it-tools
+# Auto-discovers products under products/<name>/ and tools within them
+set -eu
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+. "$PROJECT_ROOT/lib/common.sh"
+
+VERSION="0.1.0"
+
+# ============================================================
+# Usage
+# ============================================================
+
+show_usage() {
+    cat >&2 << EOF
+it-tools v$VERSION — IT Administration Automation Toolkit
+
+Usage:
+  it <product> <tool> [options]    Run a tool for a product
+  it <product> list                List available tools for a product
+  it list                          List available products
+  it help                          Show this help message
+  it version                       Show version
+
+Examples:
+  it glpi monitor                  Run GLPI health check
+  it glpi backup                   Run GLPI backup
+  it glpi purge --dry-run          Preview GLPI purge
+  it glpi list                     List GLPI tools
+
+Options (passed to tools):
+  --dry-run       Preview changes without executing
+  --verbose       Enable debug-level logging
+  --quiet         Suppress all output except errors
+  --help          Show tool-specific help
+EOF
+}
+
+# ============================================================
+# Product/Tool Discovery
+# ============================================================
+
+list_products() {
+    _lp_products_dir="$PROJECT_ROOT/products"
+    if [ ! -d "$_lp_products_dir" ]; then
+        log_error "Products directory not found: $_lp_products_dir"
+        exit "$EXIT_CONFIG"
+    fi
+    printf "Available products:\n"
+    for _lp_prod_dir in "$_lp_products_dir"/*/; do
+        [ -d "$_lp_prod_dir" ] || continue
+        _lp_name=$(basename "$_lp_prod_dir")
+        # Count tools
+        _lp_count=0
+        for _lp_t in "$_lp_prod_dir"/*.sh; do
+            [ -f "$_lp_t" ] && _lp_count=$(( _lp_count + 1 ))
+        done
+        printf "  %-20s (%d tools)\n" "$_lp_name" "$_lp_count"
+    done
+}
+
+list_tools() {
+    _lt_product="$1"
+    _lt_prod_dir="$PROJECT_ROOT/products/$_lt_product"
+    if [ ! -d "$_lt_prod_dir" ]; then
+        log_error "Unknown product: $_lt_product"
+        exit "$EXIT_CONFIG"
+    fi
+    printf "Available tools for %s:\n" "$_lt_product"
+    for _lt_tool_path in "$_lt_prod_dir"/*.sh; do
+        [ -f "$_lt_tool_path" ] || continue
+        _lt_tool_name=$(basename "$_lt_tool_path" .sh)
+        _lt_desc=$(grep '^# description:' "$_lt_tool_path" | head -1 | sed 's/^# description: *//')
+        _lt_desc="${_lt_desc:-No description}"
+        printf "  %-20s %s\n" "$_lt_tool_name" "$_lt_desc"
+    done
+}
+
+# ============================================================
+# Main Dispatch
+# ============================================================
+
+if [ $# -eq 0 ]; then
+    show_usage
+    exit 0
+fi
+
+case "$1" in
+    help|--help|-h)
+        show_usage
+        exit 0
+        ;;
+    version|--version)
+        printf "it-tools v%s\n" "$VERSION"
+        exit 0
+        ;;
+    list)
+        list_products
+        exit 0
+        ;;
+esac
+
+# Expect: it <product> <tool> [args...]
+_main_product="$1"
+shift
+
+_main_prod_dir="$PROJECT_ROOT/products/$_main_product"
+if [ ! -d "$_main_prod_dir" ]; then
+    log_error "Unknown product: $_main_product"
+    printf "Run 'it list' to see available products.\n" >&2
+    exit "$EXIT_CONFIG"
+fi
+
+if [ $# -eq 0 ] || [ "$1" = "list" ]; then
+    list_tools "$_main_product"
+    exit 0
+fi
+
+_main_tool="$1"
+shift
+
+_main_tool_path="$_main_prod_dir/${_main_tool}.sh"
+if [ ! -f "$_main_tool_path" ]; then
+    log_error "Unknown tool: $_main_tool (product: $_main_product)"
+    printf "Run 'it %s list' to see available tools.\n" "$_main_product" >&2
+    exit "$EXIT_CONFIG"
+fi
+
+# Dispatch to the tool
+exec sh "$_main_tool_path" "$@"
