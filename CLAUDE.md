@@ -22,6 +22,7 @@ All scripts MUST be POSIX sh compliant (`#!/bin/sh`, `set -eu`). No bash-isms:
 - `lib/alert.sh` — Multi-channel alerts (email, Teams, Slack, log) with cooldown
 - `lib/db.sh` — DB credential loading (direct or GLPI auto-detect), query/dump helpers
 - `lib/backup_check.sh` — Safety gate: verify recent backup before destructive ops
+- `lib/report.sh` — HTML/CSV report generation helpers for ticket quality control
 - `products/<name>/<tool>.sh` — Product-specific tools. Each has `# description:` comment
 
 ## Exit Codes
@@ -41,8 +42,19 @@ Test helper provides: `assert_equals`, `assert_true`, `assert_contains`, `assert
 3. Call `parse_common_flags "$@"` for --dry-run, --verbose, --quiet
 4. The dispatcher discovers it automatically
 
+## Documentation
+
+- `README.md` — Project overview, quick start, cron examples
+- `docs/USAGE.md` — Per-tool CLI reference with flags, steps, and exit codes
+- `docs/CONFIGURATION.md` — All config parameters with types and defaults (from script fallbacks)
+- `docs/TROUBLESHOOTING.md` — Errors by exit code with verbatim messages and fixes
+- `docs/plans/` — Internal design and implementation plans
+
+When adding or changing tools, update `docs/USAGE.md` and `docs/CONFIGURATION.md` to match. Error messages should stay in sync with `docs/TROUBLESHOOTING.md`. Version is runtime-only (`bin/it`), not hardcoded in docs.
+
 ## Key Design Decisions
 
+- Report and asset_status tools use lock files; monitoring does not
 - Destructive ops (backup/purge/archive) use lock files; monitoring does not
 - Purge/archive require a recent backup (safety gate)
 - All destructive ops support --dry-run

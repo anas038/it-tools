@@ -70,6 +70,40 @@ Tables affected by trash purge: `glpi_tickets`, `glpi_computers`, `glpi_monitors
 
 Archived tables: `glpi_tickets` (closed, status=6), `glpi_logs`, `glpi_queuednotifications`.
 
+## Reports
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `REPORT_OUTPUT_DIR` | path | `/tmp` | Directory where CSV and HTML report files are saved. |
+| `REPORT_CONTROLS` | string | `01,02,04,05` | Comma-separated list of controls to run. Valid values: `01`, `02`, `04`, `05`. |
+| `REPORT_CATEGORIES` | string | `Intervention Préventive,Intervention Curative` | Comma-separated list of GLPI ticket categories to include in reports. |
+| `REPORT_SIGNATURE` | string | `Équipe Technique` | Signature text displayed at the bottom of HTML reports. |
+| `REPORT_FROM_NAME` | string | `it-tools` | Sender name used in alert subjects. |
+| `REPORT_MIN_PDF_PAGES` | integer | `2` | Minimum number of PDF pages to flag in control 05. |
+
+## GLPI Ticket URL
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `GLPI_TICKET_URL` | string | *(empty)* | Base URL for ticket links in HTML reports (e.g., `https://glpi.company.local/front/ticket.form.php?id=`). The ticket ID is appended to this URL. If empty, ticket IDs are still displayed but not clickable. |
+
+## GLPI API
+
+Used by the `asset_status` tool to update asset records via the GLPI REST API.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `GLPI_API_URL` | string | *(empty)* | Base URL of the GLPI REST API (e.g., `https://glpi.company.local/apirest.php`). Required for `asset_status`. |
+| `GLPI_API_APP_TOKEN` | string | *(empty)* | Permanent application token generated in GLPI (Configuration > API). Required for `asset_status`. |
+| `GLPI_API_USER` | string | *(empty)* | Username for GLPI API authentication. Required for `asset_status`. |
+| `GLPI_API_PASS` | string | *(empty)* | Password for GLPI API authentication. The config file should be `chmod 600`. Required for `asset_status`. |
+
+## Asset Status
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `HORS_SUPPORT_FILE` | path | *(empty)* | Default file path containing serial numbers for hors-support mode (one per line). Can be overridden at runtime with `--file`. |
+
 ## Safety
 
 | Parameter | Type | Default | Description |
@@ -97,6 +131,8 @@ Lock file locations:
 - Backup: `$PROJECT_ROOT/logs/glpi-backup.lock`
 - Purge: `$PROJECT_ROOT/logs/glpi-purge.lock`
 - Archive: `$PROJECT_ROOT/logs/glpi-archive.lock`
+- Report: `$PROJECT_ROOT/logs/glpi-report.lock`
+- Asset Status: `$PROJECT_ROOT/logs/glpi-asset-status.lock`
 
 The monitor tool does not use a lock file.
 

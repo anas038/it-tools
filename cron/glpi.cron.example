@@ -14,3 +14,9 @@
 
 # Archive old data — monthly on 1st at 04:00
 0 4 1 * * /opt/it-tools/bin/it glpi archive >> /opt/it-tools/logs/cron.log 2>&1
+
+# Ticket quality reports — weekdays at 07:00
+0 7 * * 1-5 /opt/it-tools/bin/it glpi report >> /opt/it-tools/logs/cron.log 2>&1
+
+# Asset warranty status update — Monday at 06:00
+0 6 * * 1 /opt/it-tools/bin/it glpi asset_status --mode warranty >> /opt/it-tools/logs/cron.log 2>&1

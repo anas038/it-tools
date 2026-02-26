@@ -91,7 +91,7 @@ printf "\n"
 # ---- Step 1: Dependency checking (§26) ----
 _info "Checking dependencies..."
 _MISSING=""
-for _dep_cmd in curl tar gzip mysql mysqldump systemctl mountpoint; do
+for _dep_cmd in curl tar gzip mysql mysqldump systemctl mountpoint pdfinfo; do
     if command -v "$_dep_cmd" >/dev/null 2>&1; then
         _ok "  Found: $_dep_cmd"
     else
@@ -122,6 +122,7 @@ if [ -n "$_MISSING" ]; then
             mysql|mysqldump) _APT_PKGS="$_APT_PKGS mariadb-client" ;;
             curl)            _APT_PKGS="$_APT_PKGS curl" ;;
             gzip)            _APT_PKGS="$_APT_PKGS gzip" ;;
+            pdfinfo)         _APT_PKGS="$_APT_PKGS poppler-utils" ;;
             *)               ;; # systemctl, mountpoint are in base system
         esac
     done

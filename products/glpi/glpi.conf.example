@@ -64,5 +64,25 @@ ALERT_COOLDOWN_MINUTES=60          # suppress repeat alerts for this duration
 LOG_DIR=""                         # empty = default (project logs/ dir)
 LOG_LEVEL="info"                   # debug | info | warn | error
 
+# -- Reports --
+REPORT_OUTPUT_DIR="/tmp"                     # Where to save CSV/HTML report files
+REPORT_CONTROLS="01,02,04,05"               # Which controls to run (comma-separated)
+REPORT_CATEGORIES="Intervention Préventive,Intervention Curative"
+REPORT_SIGNATURE="Équipe Technique"          # Email report signature
+REPORT_FROM_NAME="it-tools"                  # Report sender name
+REPORT_MIN_PDF_PAGES=2                       # Min pages for control-05 PDF check
+
+# -- GLPI Ticket URL --
+GLPI_TICKET_URL=""                           # e.g., https://glpi.company.local/front/ticket.form.php?id=
+
+# -- GLPI API (for asset_status tool) --
+GLPI_API_URL=""                              # e.g., https://glpi.company.local/apirest.php
+GLPI_API_APP_TOKEN=""                        # Permanent app token
+GLPI_API_USER=""                             # API user
+GLPI_API_PASS=""                             # API password
+
+# -- Asset Status --
+HORS_SUPPORT_FILE=""                         # Default file path for hors-support serial numbers
+
 # -- Runtime --
 RUN_USER="admdev"
