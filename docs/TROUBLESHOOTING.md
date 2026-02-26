@@ -43,13 +43,29 @@ Errors in it-tools are signaled via exit codes. Each section below covers one ex
 - **Cause:** `ARCHIVE_MODE` is set to something other than `sqldump` or `archivedb`.
 - **Fix:** Set `ARCHIVE_MODE=sqldump` or `ARCHIVE_MODE=archivedb` in `glpi.conf`.
 
+**Message:** `Invalid control: <value> (valid: 01, 02, 04, 05)`
+- **Cause:** The `--control` flag was given an unsupported value.
+- **Fix:** Use one of: `01`, `02`, `04`, `05`.
+
+**Message:** `Invalid mode: <value> (valid: warranty, hors-support)`
+- **Cause:** The `--mode` flag for `asset_status` was given an unsupported value.
+- **Fix:** Use `--mode warranty` or `--mode hors-support`.
+
+**Message:** `Required argument missing: GLPI_API_URL`
+- **Cause:** The `asset_status` tool requires GLPI API configuration but one or more parameters are empty.
+- **Fix:** Set `GLPI_API_URL`, `GLPI_API_APP_TOKEN`, `GLPI_API_USER`, and `GLPI_API_PASS` in `glpi.conf`.
+
+**Message:** `Hors-support file not found: <path>`
+- **Cause:** The file specified by `--file` or `HORS_SUPPORT_FILE` does not exist.
+- **Fix:** Verify the file path. The file should contain one serial number per line.
+
 ---
 
 ## Exit Code 2 — Dependency
 
 **Message:** *(from install.sh)* `Missing: <command>`
 - **Cause:** A required system command is not installed.
-- **Dependencies:** `curl`, `tar`, `gzip`, `mysql`, `mysqldump`, `systemctl`, `mountpoint`, `nslookup`
+- **Dependencies:** `curl`, `tar`, `gzip`, `mysql`, `mysqldump`, `systemctl`, `mountpoint`, `nslookup`, `pdfinfo`
 - **Fix:**
   ```sh
   # Debian/Ubuntu
@@ -57,6 +73,9 @@ Errors in it-tools are signaled via exit codes. Each section below covers one ex
 
   # For email alerts
   sudo apt install -y msmtp
+
+  # For PDF page count (control 05)
+  sudo apt install -y poppler-utils
   ```
 
 ---
@@ -84,6 +103,32 @@ Errors in it-tools are signaled via exit codes. Each section below covers one ex
 **Message:** `Failed to export <table> for archiving` / `Failed to delete archived records from <table>`
 - **Cause:** A SELECT or DELETE query failed during archive. Could be a permissions issue, table lock, or disk full (for sqldump mode).
 - **Fix:** Check DB user privileges and disk space on the archive destination.
+
+---
+
+**Message:** `Missing plugin tables: <list>`
+- **Cause:** The report tool requires GLPI plugins (Fields and Generic Object) with specific tables. The tables were not found in the database.
+- **Fix:** Install and enable the required GLPI plugins:
+  - **Fields plugin** — provides `glpi_plugin_fields_ticketrfrenceticketexternes` and related dropdown tables
+  - **Generic Object plugin** — provides `glpi_plugin_genericobject_compteusebillets`
+
+  The report tool will skip gracefully (exit 0) if plugin tables are missing.
+
+**Message:** `GLPI API authentication failed (HTTP <code>): <body>`
+- **Cause:** The GLPI REST API rejected the login credentials.
+- **Fix:**
+  ```sh
+  # Test API credentials manually
+  curl -s -H "Content-Type: application/json" \
+       -H "App-Token: YOUR_APP_TOKEN" \
+       -d '{"login":"YOUR_USER","password":"YOUR_PASS"}' \
+       https://glpi.company.local/apirest.php/initSession
+
+  # Common issues:
+  # - App token not enabled in GLPI (Configuration > API)
+  # - API user does not have API access rights
+  # - API URL is incorrect (should end with /apirest.php)
+  ```
 
 ---
 
@@ -142,7 +187,7 @@ Errors in it-tools are signaled via exit codes. Each section below covers one ex
   ps aux | grep "it glpi"
 
   # If no process is running, the lock is orphaned — remove it
-  rm /opt/it-tools/logs/glpi-backup.lock   # or glpi-purge.lock, glpi-archive.lock
+  rm /opt/it-tools/logs/glpi-backup.lock   # or glpi-purge.lock, glpi-archive.lock, glpi-report.lock, glpi-asset-status.lock
 
   # Locks auto-expire after LOCK_TIMEOUT_MINUTES (default: 120 min)
   ```
@@ -151,6 +196,8 @@ Lock file locations:
 - `logs/glpi-backup.lock`
 - `logs/glpi-purge.lock`
 - `logs/glpi-archive.lock`
+- `logs/glpi-report.lock`
+- `logs/glpi-asset-status.lock`
 
 ---
 

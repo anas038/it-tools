@@ -268,3 +268,121 @@ it glpi archive --verbose
 ```cron
 0 4 1 * * /opt/it-tools/bin/it glpi archive >> /opt/it-tools/logs/cron.log 2>&1
 ```
+
+---
+
+### report
+
+Generates ticket quality control reports for GLPI. Checks resolved tickets for missing data fields and produces CSV + HTML reports. Uses a lock file. Does not modify any data.
+
+```sh
+it glpi report
+it glpi report --control 01
+it glpi report --dry-run
+it glpi report --verbose
+```
+
+**Controls available:**
+
+| Control | Description | What it checks |
+|---------|-------------|----------------|
+| 01 | Missing SN / report number | Serial number or report number is empty, and report is not a "Fermeture" |
+| 02 | Missing "Pannes" field | The pannefielddropdowns_id field is NULL, empty, or 0 |
+| 04 | No attachments | No documents attached (ticket, solution, or followup) |
+| 05 | PDF page count | PDF attachments with at least N pages (configurable) |
+
+**Steps performed (in order):**
+
+1. Acquire lock (`logs/glpi-report.lock`)
+2. Load DB credentials
+3. Verify plugin tables exist (skip gracefully if missing)
+4. For each enabled control (or just the one specified via `--control`):
+   a. Execute SQL query via `db_query`
+   b. For control 05: post-process with `pdfinfo` page count check
+   c. Generate CSV file with results
+   d. Generate HTML file with technician-grouped table
+5. Send summary alert via `send_alert`
+6. Release lock
+
+**Behavior:**
+- Controls are configured via `REPORT_CONTROLS` (comma-separated, default: `01,02,04,05`)
+- Use `--control N` to run a single control
+- If plugin tables are missing, reports are skipped with a warning (not an error)
+- Empty results are skipped (no file generated)
+- Reports are saved to `REPORT_OUTPUT_DIR` as `glpi-control-{N}-{YYYYMMDD}.csv` and `.html`
+- HTML reports include clickable ticket IDs linking to `GLPI_TICKET_URL`
+- French user-facing output (email reports), English logs
+
+**Relevant config:**
+
+| Parameter | Purpose |
+|-----------|---------|
+| `REPORT_OUTPUT_DIR` | Where to save CSV/HTML files (default: `/tmp`) |
+| `REPORT_CONTROLS` | Which controls to run (default: `01,02,04,05`) |
+| `REPORT_CATEGORIES` | GLPI ticket categories to check (default: `Intervention Préventive,Intervention Curative`) |
+| `REPORT_SIGNATURE` | Signature at bottom of HTML report (default: `Équipe Technique`) |
+| `REPORT_MIN_PDF_PAGES` | Minimum PDF pages for control 05 (default: `2`) |
+| `GLPI_TICKET_URL` | Base URL for ticket links in HTML reports |
+| `DB_*` / `DB_AUTO_DETECT` | Database credentials |
+| `ALERT_*` | Alert channels and cooldown |
+
+**Example cron (weekdays at 07:00):**
+
+```cron
+0 7 * * 1-5 /opt/it-tools/bin/it glpi report >> /opt/it-tools/logs/cron.log 2>&1
+```
+
+---
+
+### asset_status
+
+Updates asset warranty and support status via the GLPI REST API. Supports two modes: automatic warranty computation and manual hors-support designation. Uses a lock file.
+
+```sh
+it glpi asset_status --mode warranty
+it glpi asset_status --mode warranty --dry-run
+it glpi asset_status --mode hors-support --file /path/to/serials.txt
+it glpi asset_status --mode hors-support --dry-run
+```
+
+**Modes:**
+
+| Mode | How it works |
+|------|--------------|
+| `warranty` | Queries all machines from DB, computes warranty expiry from `warranty_date + warranty_duration`, updates status to Garantie (1) or Maintenance (2) via API. Machines already set to Hors Support (3) are skipped. |
+| `hors-support` | Reads serial numbers from a file (one per line), looks up GLPI ID via DB, sets status to Hors Support (3) via API. |
+
+**Steps performed (in order):**
+
+1. Acquire lock (`logs/glpi-asset-status.lock`)
+2. Initialize GLPI API session (`initSession`)
+3. **warranty mode**: Query machines via `db_query`, compute warranty expiry, compare to today, PUT status update via API
+4. **hors-support mode**: Read serial numbers from file, look up GLPI ID via `db_query`, PUT status=3 via API
+5. Kill GLPI API session (`killSession`)
+6. Send alert if errors occurred
+7. Release lock
+
+**Behavior:**
+- Requires GLPI API credentials (`GLPI_API_URL`, `GLPI_API_APP_TOKEN`, `GLPI_API_USER`, `GLPI_API_PASS`)
+- API session is automatically cleaned up on exit (including on interrupt)
+- Machines with status Hors Support (3) are ignored in warranty mode
+- Machines with incomplete warranty info (no date or zero duration) are skipped
+- Failed API calls are collected as errors; processing continues with remaining machines
+
+**Relevant config:**
+
+| Parameter | Purpose |
+|-----------|---------|
+| `GLPI_API_URL` | GLPI REST API base URL (required) |
+| `GLPI_API_APP_TOKEN` | Permanent application token (required) |
+| `GLPI_API_USER` | API login username (required) |
+| `GLPI_API_PASS` | API login password (required) |
+| `HORS_SUPPORT_FILE` | Default file for hors-support serial numbers (overridden by `--file`) |
+| `DB_*` / `DB_AUTO_DETECT` | Database credentials |
+| `ALERT_*` | Alert channels and cooldown |
+
+**Example cron (Monday at 06:00):**
+
+```cron
+0 6 * * 1 /opt/it-tools/bin/it glpi asset_status --mode warranty >> /opt/it-tools/logs/cron.log 2>&1
+```
