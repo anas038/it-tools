@@ -1,0 +1,16 @@
+# ============================================================
+# GLPI cron jobs — it-tools
+# Install: crontab -e  (paste these lines)
+# ============================================================
+
+# Health monitoring — every 5 minutes
+*/5 * * * * /opt/it-tools/bin/it glpi monitor >> /opt/it-tools/logs/cron.log 2>&1
+
+# Full backup — daily at 02:00
+0 2 * * * /opt/it-tools/bin/it glpi backup >> /opt/it-tools/logs/cron.log 2>&1
+
+# Purge old data — weekly on Sunday at 03:00
+0 3 * * 0 /opt/it-tools/bin/it glpi purge >> /opt/it-tools/logs/cron.log 2>&1
+
+# Archive old data — monthly on 1st at 04:00
+0 4 1 * * /opt/it-tools/bin/it glpi archive >> /opt/it-tools/logs/cron.log 2>&1
