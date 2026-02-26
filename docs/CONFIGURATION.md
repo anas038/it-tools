@@ -129,6 +129,7 @@ The flag file is created at `$GLPI_INSTALL_PATH/files/_cache/maintenance_mode`.
 
 Lock file locations:
 - Backup: `$PROJECT_ROOT/logs/glpi-backup.lock`
+- Restore: `$PROJECT_ROOT/logs/glpi-restore.lock`
 - Purge: `$PROJECT_ROOT/logs/glpi-purge.lock`
 - Archive: `$PROJECT_ROOT/logs/glpi-archive.lock`
 - Report: `$PROJECT_ROOT/logs/glpi-report.lock`

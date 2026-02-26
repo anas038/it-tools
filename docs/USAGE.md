@@ -152,6 +152,65 @@ $BACKUP_DEST/
 
 ---
 
+### restore
+
+Restores GLPI from a backup image (database dump, files directory, and/or webroot). Supports selective component restore and interactive backup selection. Uses a lock file. Always requires confirmation before proceeding.
+
+```sh
+it glpi restore                                    # interactive backup selection, restore all
+it glpi restore --backup /mnt/nas/backups/glpi/glpi-backup-2026-02-26-020000
+it glpi restore --backup <path> --db               # restore only the database
+it glpi restore --backup <path> --files --webroot   # restore files and webroot, skip DB
+it glpi restore --dry-run                           # preview without restoring
+```
+
+**Components:**
+
+| Flag | What it restores |
+|------|------------------|
+| `--db` | Imports the SQL dump into the GLPI database |
+| `--files` | Extracts the `files/` directory archive into `$GLPI_INSTALL_PATH/` |
+| `--webroot` | Extracts the webroot archive (excluding `files/`) into the parent of `$GLPI_INSTALL_PATH` |
+
+If no component flags are specified, all three components are restored.
+
+**Steps performed (in order):**
+
+1. Acquire lock (`logs/glpi-restore.lock`)
+2. Select backup — interactive menu if `--backup` is not provided, otherwise use the given path
+3. Validate backup — reject partial backups (`.partial` flag) and directories with no archives
+4. Show restore plan and prompt for confirmation
+5. Load DB credentials (if restoring database)
+6. Enable GLPI maintenance mode
+7. Stop web services — Apache and PHP-FPM (if restoring files or webroot)
+8. Restore selected components (database, files, webroot)
+9. Fix file permissions — `chown -R` to `RUN_USER` or `www-data`
+10. Start web services and disable maintenance mode (via trap)
+11. Report results and send alert if errors occurred
+
+**Behavior:**
+- If `--backup` is omitted, an interactive menu lists available backups sorted newest-first with sizes and partial status
+- Partial backups (`.partial` flag) are rejected — they cannot be restored
+- The `confirm` prompt auto-declines in `--dry-run` mode (previews the plan, then exits)
+- Services are restarted and maintenance mode is disabled even on error (via shell trap)
+- Failed components are collected as errors; restore continues with remaining components
+- Exits with code 8 (Partial) if any component failed, code 0 on full success
+
+**Relevant config:**
+
+| Parameter | Purpose |
+|-----------|---------|
+| `BACKUP_DEST` | Where to find backups for interactive selection |
+| `GLPI_INSTALL_PATH` | Target for files and webroot extraction |
+| `DB_*` / `DB_AUTO_DETECT` | Database credentials for DB restore |
+| `RUN_USER` | User for file ownership fix (default: `www-data`) |
+| `ALERT_*` | Alert channels and cooldown |
+| `LOCK_TIMEOUT_MINUTES` | Stale lock auto-expiry (default: 120) |
+
+Restore is a manual operation — no cron example.
+
+---
+
 ### purge
 
 Permanently deletes old data from GLPI tables. Requires a recent backup (safety gate). Uses a lock file and optional maintenance mode.
