@@ -1,0 +1,5 @@
+# Exclude non-distributable files from release archives
+CLAUDE.md export-ignore
+docs/plans/ export-ignore
+tests/ export-ignore
+.gitattributes export-ignore
