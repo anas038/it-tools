@@ -1,0 +1,68 @@
+# ============================================================
+# GLPI Configuration — it-tools
+# ============================================================
+# Copy this file to glpi.conf and adjust values for your environment.
+# File permissions should be set to 600 (owner read/write only).
+
+# -- GLPI Instance --
+GLPI_URL="https://glpi.company.local"
+GLPI_INSTALL_PATH="/var/www/html/glpi"
+
+# -- Database --
+# Set DB_AUTO_DETECT=true to read credentials from GLPI's config_db.php
+DB_AUTO_DETECT=false
+DB_HOST="localhost"
+DB_NAME="glpi"
+DB_USER="glpi"
+DB_PASS="changeme"
+
+# -- Backup --
+BACKUP_DEST="/mnt/nas/backups/glpi"
+BACKUP_RETENTION_DAYS=30
+BACKUP_VERIFY=false
+
+# -- Monitoring --
+MONITOR_DISK_WARN_PCT=80
+MONITOR_DISK_CRIT_PCT=95
+
+# -- Purge thresholds (months, 0 = disabled) --
+PURGE_CLOSED_TICKETS_MONTHS=12
+PURGE_LOGS_MONTHS=6
+PURGE_NOTIFICATIONS_MONTHS=3
+PURGE_TRASH_MONTHS=1
+
+# -- Archive --
+ARCHIVE_MODE="sqldump"            # sqldump | archivedb
+ARCHIVE_DB_NAME="glpi_archive"    # only used if ARCHIVE_MODE=archivedb
+ARCHIVE_MONTHS=12
+
+# -- Safety --
+REQUIRE_RECENT_BACKUP=true
+BACKUP_MAX_AGE_HOURS=24
+BACKUP_KEEP_PARTIAL=true           # keep partial backups on failure
+BACKUP_VERIFY_MOUNT=true           # verify NAS mount before writing
+
+# -- Maintenance mode --
+MAINTENANCE_MODE_ENABLED=false     # put GLPI in maintenance during purge/archive
+
+# -- Lock files --
+LOCK_TIMEOUT_MINUTES=120           # stale lock auto-expiry
+
+# -- Retries --
+RETRY_COUNT=3
+RETRY_DELAY_SECONDS=10
+
+# -- Alerts --
+# Comma-separated list: email,teams,slack,log
+ALERT_CHANNELS="email,log"
+ALERT_EMAIL_TO="admin@company.local"
+ALERT_TEAMS_WEBHOOK=""
+ALERT_SLACK_WEBHOOK=""
+ALERT_COOLDOWN_MINUTES=60          # suppress repeat alerts for this duration
+
+# -- Logging --
+LOG_DIR=""                         # empty = default (project logs/ dir)
+LOG_LEVEL="info"                   # debug | info | warn | error
+
+# -- Runtime --
+RUN_USER="admdev"
