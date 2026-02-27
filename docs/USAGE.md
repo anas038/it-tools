@@ -93,6 +93,41 @@ it glpi monitor --verbose
 
 ---
 
+### status
+
+Shows a read-only overview of the GLPI instance. Does not require a lock file and does not modify any data.
+
+```sh
+it glpi status
+it glpi status --verbose
+```
+
+**Sections displayed:**
+
+| Section | What it shows |
+|---------|---------------|
+| Instance | `GLPI_URL`, `GLPI_INSTALL_PATH`, path existence check |
+| System | PHP version, disk usage on the install path partition |
+| Database | MariaDB version, DB size, open/total tickets, computers, active users |
+| Backup | Latest backup timestamp, age in hours, partial status, total size |
+
+**Behavior:**
+- Each section degrades independently — if DB credentials are missing, the Database section is skipped; if `BACKUP_DEST` is empty, the Backup section is skipped
+- Always exits with code 0 (informational only)
+- No lock file, no alerts
+- Typically run manually, but can be cron'd for dashboards
+
+**Relevant config:**
+
+| Parameter | Purpose |
+|-----------|---------|
+| `GLPI_URL` | Displayed in Instance section |
+| `GLPI_INSTALL_PATH` | Path existence check and disk usage |
+| `BACKUP_DEST` | Where to find backups for Backup section |
+| `DB_*` / `DB_AUTO_DETECT` | Database credentials for Database section |
+
+---
+
 ### backup
 
 Full backup of GLPI: database dump, files directory, and webroot. Uses a lock file to prevent concurrent runs.
