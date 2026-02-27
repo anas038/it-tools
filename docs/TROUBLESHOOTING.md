@@ -327,6 +327,15 @@ sudo chmod 700 /opt/it-tools/logs
    ```
 4. Check the cron output log: `tail /opt/it-tools/logs/cron.log`
 
+### Status shows "unavailable" for database fields
+
+**Symptom:** `it glpi status` shows `unavailable` for MariaDB version, DB size, etc.
+
+**Checks:**
+1. Verify DB credentials in `glpi.conf` (or set `DB_AUTO_DETECT=true`)
+2. Verify MariaDB is running: `systemctl status mariadb`
+3. Run with `--verbose` to see debug output
+
 ### Dry-run shows no records to purge/archive
 
 **Symptom:** `it glpi purge --dry-run` shows 0 records for all targets.
