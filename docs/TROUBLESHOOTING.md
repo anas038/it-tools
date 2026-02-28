@@ -39,6 +39,10 @@ Errors in it-tools are signaled via exit codes. Each section below covers one ex
 - **Cause:** The tool name does not match any `.sh` file in the product directory.
 - **Fix:** Run `it <product> list` to see available tools.
 
+**Message:** `Config file has syntax errors: <path>`
+- **Cause:** `glpi.conf` contains a shell syntax error (unclosed quote, invalid assignment).
+- **Fix:** Run `sh -n products/glpi/glpi.conf` to see the error, then fix the file.
+
 **Message:** `Unknown ARCHIVE_MODE: <value>`
 - **Cause:** `ARCHIVE_MODE` is set to something other than `sqldump` or `archivedb`.
 - **Fix:** Set `ARCHIVE_MODE=sqldump` or `ARCHIVE_MODE=archivedb` in `glpi.conf`.
@@ -335,6 +339,15 @@ sudo chmod 700 /opt/it-tools/logs
 1. Verify DB credentials in `glpi.conf` (or set `DB_AUTO_DETECT=true`)
 2. Verify MariaDB is running: `systemctl status mariadb`
 3. Run with `--verbose` to see debug output
+
+### Check tool reports multiple failures
+
+**Symptom:** `it glpi check` shows several `[FAIL]` lines after initial setup.
+
+**Checks:**
+1. Start with `it glpi check --quiet` to see only failures
+2. Fix config issues first (exit code 1), then dependency issues (exit code 2)
+3. Run `it glpi check --verbose` for debug details on each check
 
 ### Dry-run shows no records to purge/archive
 
