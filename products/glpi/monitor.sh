@@ -23,6 +23,8 @@ GLPI_INSTALL_PATH="${GLPI_INSTALL_PATH:-/var/www/html/glpi}"
 MONITOR_CERT_WARN_DAYS="${MONITOR_CERT_WARN_DAYS:-30}"
 MONITOR_CERT_CRIT_DAYS="${MONITOR_CERT_CRIT_DAYS:-7}"
 
+_MON_STATE_FILE="${LOG_DIR:-/tmp}/.monitor_failure_state"
+
 # ---- Parse flags ----
 parse_common_flags "$@" || {
     cat >&2 << EOF
@@ -214,8 +216,15 @@ if has_errors; then
     _mon_details=$(get_errors)
     log_error "$_mon_summary"
     send_alert "$_mon_summary" "$_mon_details" "monitor"
+    echo "$_failed_checks" > "$_MON_STATE_FILE"
     exit "$EXIT_SERVICE"
 else
     log_info "GLPI health check PASSED — all checks OK"
+    if [ -f "$_MON_STATE_FILE" ]; then
+        _mon_prev_failures=$(cat "$_MON_STATE_FILE" 2>/dev/null) || _mon_prev_failures="unknown"
+        rm -f "$_MON_STATE_FILE"
+        send_alert "GLPI RECOVERED" "All checks passing. Previous failures: $_mon_prev_failures" "monitor"
+        log_info "Recovery alert sent (previous failures: $_mon_prev_failures)"
+    fi
     exit "$EXIT_OK"
 fi
