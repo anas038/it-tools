@@ -5,7 +5,7 @@ IT administration automation toolkit. Automates monitoring, backup, purge, and a
 ## Features
 
 - **Check** — Pre-flight validation of config, dependencies, paths, database, and config values
-- **Monitor** — Full stack health check: DNS, HTTP, Apache, MariaDB, PHP, disk space
+- **Monitor** — Full stack health check: DNS, HTTP, Apache, MariaDB, PHP, disk space, SSL certificate expiry. Sends recovery alerts when issues resolve.
 - **Backup** — Database dump + files + webroot with retention policy and integrity verification
 - **Restore** — Selective restore of database, files, and/or webroot from a backup image
 - **Purge** — Delete old tickets, logs, notifications, and trashed items with configurable thresholds
