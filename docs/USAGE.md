@@ -66,11 +66,15 @@ it glpi monitor --verbose
 5. **MariaDB connectivity** — Pings the database with `mysqladmin` (if DB credentials are available)
 6. **PHP** — Checks `php` command exists and detects PHP-FPM service
 7. **Disk** — Checks disk usage on the `GLPI_INSTALL_PATH` partition against warning/critical thresholds
+8. **SSL certificate** — Checks days until TLS certificate expiry on `GLPI_URL` (HTTPS only)
 
 **Behavior:**
 - Checks that fail are collected (not immediate abort) so all issues are reported at once
 - If any check fails, an alert is sent and the tool exits with code 4 (Service)
+- Recovery alerts: when all checks pass after a previous failure, a "GLPI RECOVERED" alert is sent
 - If `GLPI_URL` is empty, DNS and HTTP checks are skipped with a warning
+- If `GLPI_URL` is HTTP (not HTTPS), the SSL check is skipped
+- If `openssl` is not installed, the SSL check is skipped with a warning
 - If DB credentials are not available, the connectivity check is skipped
 
 **Relevant config:**
@@ -81,6 +85,8 @@ it glpi monitor --verbose
 | `GLPI_INSTALL_PATH` | Target for disk usage check |
 | `MONITOR_DISK_WARN_PCT` | Disk warning threshold (default: 80%) |
 | `MONITOR_DISK_CRIT_PCT` | Disk critical threshold (default: 95%) |
+| `MONITOR_CERT_WARN_DAYS` | SSL certificate warning threshold in days (default: 30) |
+| `MONITOR_CERT_CRIT_DAYS` | SSL certificate critical threshold in days (default: 7) |
 | `DB_*` / `DB_AUTO_DETECT` | Database credentials for connectivity check |
 | `ALERT_*` | Alert channels and cooldown |
 | `RETRY_COUNT` / `RETRY_DELAY_SECONDS` | Retries for DNS, HTTP, and DB checks |

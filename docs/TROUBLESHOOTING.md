@@ -160,6 +160,9 @@ Errors in it-tools are signaled via exit codes. Each section below covers one ex
   | PHP | `php command not found` | Install PHP: `sudo apt install php` |
   | PHP-FPM | `<service> is not running` | `sudo systemctl start php8.2-fpm` (adjust version) |
   | Disk | `CRITICAL: <N>% used (threshold: <M>%)` | Free disk space on the GLPI partition |
+  | SSL | `Cannot retrieve certificate from <host>:<port>` | Check that `GLPI_URL` is reachable and serving a valid TLS certificate |
+  | SSL | `Certificate EXPIRED (<N> days ago): <host>` | Renew the TLS certificate immediately |
+  | SSL | `Certificate expires in <N> days (critical threshold: <M>d): <host>` | Renew the TLS certificate before it expires |
 
 ---
 

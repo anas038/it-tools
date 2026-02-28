@@ -20,6 +20,10 @@ GLPI_URL="${GLPI_URL:-}"
 MONITOR_DISK_WARN_PCT="${MONITOR_DISK_WARN_PCT:-80}"
 MONITOR_DISK_CRIT_PCT="${MONITOR_DISK_CRIT_PCT:-95}"
 GLPI_INSTALL_PATH="${GLPI_INSTALL_PATH:-/var/www/html/glpi}"
+MONITOR_CERT_WARN_DAYS="${MONITOR_CERT_WARN_DAYS:-30}"
+MONITOR_CERT_CRIT_DAYS="${MONITOR_CERT_CRIT_DAYS:-7}"
+
+_MON_STATE_FILE="${LOG_DIR:-/tmp}/.monitor_failure_state"
 
 # ---- Parse flags ----
 parse_common_flags "$@" || {
@@ -33,6 +37,7 @@ Performs full stack health check:
   - MariaDB service
   - PHP availability
   - Disk space
+  - SSL certificate expiry
 EOF
     exit 0
 }
@@ -139,6 +144,54 @@ check_disk() {
     fi
 }
 
+check_ssl_cert() {
+    if [ -z "$GLPI_URL" ]; then
+        log_warn "GLPI_URL not configured, skipping SSL check"
+        return 0
+    fi
+    case "$GLPI_URL" in
+        https://*) ;;
+        *) log_debug "GLPI_URL is not HTTPS, skipping SSL check"; return 0 ;;
+    esac
+
+    _csc_host=$(echo "$GLPI_URL" | sed 's|https://||' | sed 's|/.*||' | sed 's|:.*||')
+    _csc_port=$(echo "$GLPI_URL" | sed 's|https://||' | sed 's|/.*||' | grep ':' | sed 's|.*:||')
+    _csc_port="${_csc_port:-443}"
+    log_debug "Checking SSL certificate: $_csc_host:$_csc_port"
+
+    if ! command -v openssl >/dev/null 2>&1; then
+        log_warn "openssl not found, skipping SSL certificate check"
+        return 0
+    fi
+
+    _csc_expiry=$(echo | openssl s_client -servername "$_csc_host" \
+        -connect "$_csc_host:$_csc_port" 2>/dev/null \
+        | openssl x509 -noout -enddate 2>/dev/null \
+        | sed 's/notAfter=//') || true
+
+    if [ -z "$_csc_expiry" ]; then
+        _record_failure "SSL" "Cannot retrieve certificate from $_csc_host:$_csc_port"
+        return 0
+    fi
+
+    _csc_expiry_epoch=$(date -d "$_csc_expiry" +%s 2>/dev/null) || {
+        log_warn "Cannot parse certificate expiry date: $_csc_expiry"
+        return 0
+    }
+    _csc_now=$(date +%s)
+    _csc_days_left=$(( (_csc_expiry_epoch - _csc_now) / 86400 ))
+
+    if [ "$_csc_days_left" -le 0 ]; then
+        _record_failure "SSL" "Certificate EXPIRED ($_csc_days_left days ago): $_csc_host"
+    elif [ "$_csc_days_left" -le "$MONITOR_CERT_CRIT_DAYS" ]; then
+        _record_failure "SSL" "Certificate expires in $_csc_days_left days (critical threshold: ${MONITOR_CERT_CRIT_DAYS}d): $_csc_host"
+    elif [ "$_csc_days_left" -le "$MONITOR_CERT_WARN_DAYS" ]; then
+        log_warn "SSL WARNING: Certificate expires in $_csc_days_left days (threshold: ${MONITOR_CERT_WARN_DAYS}d): $_csc_host"
+    else
+        log_info "SSL OK: Certificate expires in $_csc_days_left days: $_csc_host"
+    fi
+}
+
 # ---- Main ----
 
 log_info "Starting GLPI health check"
@@ -155,6 +208,7 @@ if [ -n "$_DB_HOST" ]; then
 fi
 check_php
 check_disk
+check_ssl_cert
 
 # Report results
 if has_errors; then
@@ -162,8 +216,15 @@ if has_errors; then
     _mon_details=$(get_errors)
     log_error "$_mon_summary"
     send_alert "$_mon_summary" "$_mon_details" "monitor"
+    echo "$_failed_checks" > "$_MON_STATE_FILE"
     exit "$EXIT_SERVICE"
 else
     log_info "GLPI health check PASSED — all checks OK"
+    if [ -f "$_MON_STATE_FILE" ]; then
+        _mon_prev_failures=$(cat "$_MON_STATE_FILE" 2>/dev/null) || _mon_prev_failures="unknown"
+        rm -f "$_MON_STATE_FILE"
+        send_alert "GLPI RECOVERED" "All checks passing. Previous failures: $_mon_prev_failures" "monitor"
+        log_info "Recovery alert sent (previous failures: $_mon_prev_failures)"
+    fi
     exit "$EXIT_OK"
 fi

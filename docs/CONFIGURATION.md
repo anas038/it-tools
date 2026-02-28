@@ -46,6 +46,8 @@ When `DB_AUTO_DETECT=true`, credentials are parsed from `$GLPI_INSTALL_PATH/conf
 |-----------|------|---------|-------------|
 | `MONITOR_DISK_WARN_PCT` | integer | `80` | Disk usage percentage that triggers a warning log. |
 | `MONITOR_DISK_CRIT_PCT` | integer | `95` | Disk usage percentage that triggers a critical failure and alert. |
+| `MONITOR_CERT_WARN_DAYS` | integer | `30` | Days until SSL certificate expiry that triggers a warning log. Only applies when `GLPI_URL` starts with `https://`. |
+| `MONITOR_CERT_CRIT_DAYS` | integer | `7` | Days until SSL certificate expiry that triggers a critical failure and alert. Only applies when `GLPI_URL` starts with `https://`. |
 
 ## Purge
 
