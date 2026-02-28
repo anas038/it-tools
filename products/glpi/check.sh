@@ -11,8 +11,10 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # ---- Config ----
 _ck_conf="$SCRIPT_DIR/glpi.conf"
-if [ -f "$_ck_conf" ]; then
+_ck_conf_loaded=false
+if [ -f "$_ck_conf" ] && [ -r "$_ck_conf" ] && sh -n "$_ck_conf" 2>/dev/null; then
     load_config "$_ck_conf"
+    _ck_conf_loaded=true
 fi
 
 # Defaults for all checked parameters
