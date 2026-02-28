@@ -4,10 +4,15 @@ IT administration automation toolkit. Automates monitoring, backup, purge, and a
 
 ## Features
 
+- **Check** — Pre-flight validation of config, dependencies, paths, database, and config values
 - **Monitor** — Full stack health check: DNS, HTTP, Apache, MariaDB, PHP, disk space
 - **Backup** — Database dump + files + webroot with retention policy and integrity verification
+- **Restore** — Selective restore of database, files, and/or webroot from a backup image
 - **Purge** — Delete old tickets, logs, notifications, and trashed items with configurable thresholds
 - **Archive** — Export old data to SQL dumps or an archive database, then remove from live DB
+- **Report** — Ticket quality control reports with CSV + HTML output
+- **Asset Status** — Update asset warranty and support status via GLPI API
+- **Status** — Read-only overview of GLPI instance, database, and backup state
 
 All tools support `--dry-run`, multi-channel alerts (email, Teams, Slack), lock files to prevent concurrent runs, and a safety gate that requires a recent backup before destructive operations.
 
@@ -104,10 +109,15 @@ lib/common.sh                   Logging, exit codes, locks, retries, error colle
 lib/alert.sh                    Multi-channel alerts with cooldown
 lib/db.sh                       Database credential loading and query helpers
 lib/backup_check.sh             Safety gate (verify recent backup)
+products/glpi/check.sh          Config and dependency validator
 products/glpi/monitor.sh        Health check tool
 products/glpi/backup.sh         Backup tool
+products/glpi/restore.sh        Restore tool
 products/glpi/purge.sh          Purge tool
 products/glpi/archive.sh        Archive tool
+products/glpi/report.sh         Ticket quality reports
+products/glpi/asset_status.sh   Warranty and support status
+products/glpi/status.sh         Instance overview
 products/glpi/glpi.conf.example Example configuration
 cron/glpi.cron.example          Example cron entries
 install.sh                      Installer
