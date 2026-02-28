@@ -128,6 +128,41 @@ it glpi status --verbose
 
 ---
 
+### check
+
+Pre-flight diagnostic that validates configuration, dependencies, and connectivity. Does not require a lock file and does not modify any data.
+
+```sh
+it glpi check
+it glpi check --verbose
+it glpi check --quiet       # show only failures
+```
+
+**Checks performed:**
+
+| # | Category | What it checks |
+|---|----------|----------------|
+| 1 | Config File | File exists, is readable, has valid shell syntax |
+| 2 | Dependencies | Required commands (`curl`, `tar`, `gzip`, `mysql`, `mysqldump`, `systemctl`, `mountpoint`, `pdfinfo`), optional mail (`mail`/`msmtp`/`sendmail`) and `php` |
+| 3 | Paths | `GLPI_INSTALL_PATH` exists, `BACKUP_DEST` exists (+ mountpoint if `BACKUP_VERIFY_MOUNT=true`), `REPORT_OUTPUT_DIR` exists and is writable |
+| 4 | Database | Credential source configured (`DB_AUTO_DETECT` or `DB_NAME`), credentials load successfully, `mysqladmin ping` succeeds |
+| 5 | Config Values | `ARCHIVE_MODE`, `LOG_LEVEL`, `ALERT_CHANNELS` have valid values; integer parameters are numeric; `RUN_USER` exists; `GLPI_URL` is reachable |
+
+**Output format:**
+- `[OK]` — check passed (suppressed by `--quiet`)
+- `[WARN]` — non-critical issue (suppressed by `--quiet`)
+- `[FAIL]` — critical issue that should be fixed
+
+**Behavior:**
+- No lock file, no alerts — purely diagnostic
+- Exits with code 1 (Config) if any config, path, database, or value check fails
+- Exits with code 2 (Dependency) if only dependency checks fail
+- Exits with code 0 if all checks pass (warnings are allowed)
+- `--quiet` shows only FAIL lines; `--verbose` adds debug details
+- All config parameters are validated — refer to [CONFIGURATION.md](CONFIGURATION.md) for valid values
+
+---
+
 ### backup
 
 Full backup of GLPI: database dump, files directory, and webroot. Uses a lock file to prevent concurrent runs.
