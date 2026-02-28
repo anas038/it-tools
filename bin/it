@@ -8,7 +8,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 . "$PROJECT_ROOT/lib/common.sh"
 
-VERSION="0.3.0"
+VERSION="0.4.0"
 
 # ============================================================
 # Usage
